@@ -45,6 +45,49 @@ export function algorithmInfo(alg: string): AlgorithmInfo | null {
   }
 }
 
+export interface AlgorithmDescription {
+  alg: string;
+  // 署名方式の通称
+  family: 'HMAC' | 'RSA PKCS#1 v1.5' | 'RSA-PSS' | 'ECDSA';
+  hash: string;
+  kind: 'hmac' | 'rsa' | 'ec';
+  // 検証時に鍵欄へ貼るもの
+  keyNeeded: 'secret' | 'public';
+  // 一行の日本語解説
+  summary: string;
+}
+
+const FAMILY_SUMMARY: Record<AlgorithmInfo['kind'], (hash: string) => string> = {
+  hmac: (hash) => `共通鍵(HMAC-${hash})。発行と検証で同じシークレットを使う対称署名`,
+  rsa: (hash) => `RSA公開鍵署名(${hash})。秘密鍵で署名し、公開鍵で検証する`,
+  ec: (hash) => `楕円曲線署名(ECDSA, ${hash})。RSAより短い鍵で同等の強度`,
+};
+
+// alg名を、UIで提示できる人間向けの説明に展開する。未知のalgはnull。
+export function describeAlgorithm(alg: string): AlgorithmDescription | null {
+  const info = algorithmInfo(alg);
+  if (!info) return null;
+  const match = /^(HS|RS|PS|ES)(256|384|512)$/.exec(alg)!;
+  const bits = match[2]!;
+  const hash = HASHES[bits]!;
+  const family =
+    info.kind === 'hmac'
+      ? 'HMAC'
+      : info.kind === 'ec'
+        ? 'ECDSA'
+        : alg.startsWith('PS')
+          ? 'RSA-PSS'
+          : 'RSA PKCS#1 v1.5';
+  return {
+    alg,
+    family,
+    hash,
+    kind: info.kind,
+    keyNeeded: info.kind === 'hmac' ? 'secret' : 'public',
+    summary: FAMILY_SUMMARY[info.kind](hash),
+  };
+}
+
 export type KeyInput =
   | { kind: 'secret'; text: string }
   | { kind: 'pem'; spki: Uint8Array }
