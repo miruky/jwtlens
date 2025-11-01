@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { algorithmInfo, KeyError, parseKeyInput } from './keys';
+import { algorithmInfo, describeAlgorithm, KeyError, parseKeyInput } from './keys';
 
 describe('algorithmInfo', () => {
   it('HS256はHMAC+SHA-256', () => {
@@ -22,6 +22,27 @@ describe('algorithmInfo', () => {
     expect(algorithmInfo('none')).toBeNull();
     expect(algorithmInfo('HS128')).toBeNull();
     expect(algorithmInfo('EdDSA')).toBeNull();
+  });
+});
+
+describe('describeAlgorithm', () => {
+  it('HS256は共通鍵で、シークレットを要求する', () => {
+    const d = describeAlgorithm('HS256');
+    expect(d?.family).toBe('HMAC');
+    expect(d?.hash).toBe('SHA-256');
+    expect(d?.keyNeeded).toBe('secret');
+  });
+
+  it('RS/PS/ESは公開鍵を要求し、系統を区別する', () => {
+    expect(describeAlgorithm('RS256')?.family).toBe('RSA PKCS#1 v1.5');
+    expect(describeAlgorithm('PS512')?.family).toBe('RSA-PSS');
+    expect(describeAlgorithm('ES384')?.family).toBe('ECDSA');
+    expect(describeAlgorithm('ES384')?.keyNeeded).toBe('public');
+  });
+
+  it('未対応アルゴリズムはnull', () => {
+    expect(describeAlgorithm('none')).toBeNull();
+    expect(describeAlgorithm('EdDSA')).toBeNull();
   });
 });
 
