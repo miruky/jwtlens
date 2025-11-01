@@ -2,7 +2,7 @@ import { COPY_ICON, CHECK_ICON, EMPTY_ICON, LENS_MARK, STATE_ICONS, THEME_ICONS 
 import { claimViews, tokenTimeStatus, type TokenState } from './lib/claims';
 import { tokenizeJson } from './lib/highlight';
 import { JwtError, parseJwt, type DecodedJwt } from './lib/jwt';
-import { describeAlgorithm } from './lib/keys';
+import { algorithmStatus, describeAlgorithm } from './lib/keys';
 import { signHs256, verifyJwt } from './lib/verify';
 import { applyTheme, loadTheme, nextTheme, THEME_LABEL, type ThemeMode } from './theme';
 
@@ -205,7 +205,9 @@ export class App {
     this.decoded = decoded;
     this.el['parse-error']!.hidden = true;
     this.el['empty']!.hidden = true;
-    verifyButton.disabled = false;
+    // alg=none は検証する署名を持たないので、検証ボタンを無効にする。
+    const algName = typeof decoded.header['alg'] === 'string' ? decoded.header['alg'] : undefined;
+    verifyButton.disabled = algorithmStatus(algName) === 'none';
     this.renderColored(decoded);
     this.renderJson(decoded);
     this.renderAlg(decoded);
@@ -315,6 +317,7 @@ export class App {
     const alg = decoded.header['alg'];
     const card = this.el['alg']!;
     card.innerHTML = '';
+    card.classList.remove('is-danger');
     if (typeof alg !== 'string') {
       card.hidden = true;
       return;
@@ -324,6 +327,21 @@ export class App {
     name.className = 'alg-name';
     name.textContent = alg;
     card.appendChild(name);
+
+    const status = algorithmStatus(alg);
+    if (status === 'none') {
+      // alg=none は古典的な脆弱性。未対応ではなく危険として強く示す。
+      card.classList.add('is-danger');
+      const family = document.createElement('span');
+      family.className = 'alg-family';
+      family.textContent = '署名のない非セキュアトークン';
+      const summary = document.createElement('span');
+      summary.className = 'alg-summary';
+      summary.textContent =
+        '検証する署名がありません。alg=none を受け入れる実装は署名を回避され得る重大な脆弱性で、本番では必ず拒否します。';
+      card.append(family, summary);
+      return;
+    }
 
     const info = describeAlgorithm(alg);
     const family = document.createElement('span');
