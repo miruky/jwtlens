@@ -1,5 +1,6 @@
 import { COPY_ICON, CHECK_ICON, EMPTY_ICON, LENS_MARK, STATE_ICONS, THEME_ICONS } from './icons';
 import { claimViews, tokenTimeStatus, type TokenState } from './lib/claims';
+import { tokenizeJson } from './lib/highlight';
 import { JwtError, parseJwt, type DecodedJwt } from './lib/jwt';
 import { describeAlgorithm } from './lib/keys';
 import { signHs256, verifyJwt } from './lib/verify';
@@ -253,8 +254,8 @@ export class App {
 
   private renderJson(decoded: DecodedJwt): void {
     this.el['body']!.hidden = false;
-    this.el['header']!.textContent = JSON.stringify(decoded.header, null, 2);
-    this.el['payload']!.textContent = JSON.stringify(decoded.payload, null, 2);
+    paintJson(this.el['header']!, decoded.header);
+    paintJson(this.el['payload']!, decoded.payload);
   }
 
   // 失効状態の判定行とクレーム表を、現在時刻に対して描き直す。毎秒呼ばれる。
@@ -396,6 +397,23 @@ export class App {
 
 function rawToken(decoded: DecodedJwt): string {
   return `${decoded.raw.header}.${decoded.raw.payload}.${decoded.raw.signature}`;
+}
+
+// 整形済みJSONを構文ハイライトしてhostへ描く。textContentは元のJSONに一致するので、
+// コピー機能はそのまま使える。
+function paintJson(host: HTMLElement, value: unknown): void {
+  const pretty = JSON.stringify(value, null, 2);
+  host.textContent = '';
+  for (const token of tokenizeJson(pretty)) {
+    if (token.type === 'punct') {
+      host.appendChild(document.createTextNode(token.text));
+      continue;
+    }
+    const span = document.createElement('span');
+    span.className = `j-${token.type}`;
+    span.textContent = token.text;
+    host.appendChild(span);
+  }
 }
 
 // クレーム値の表示用。配列・オブジェクトはJSONで、文字列はそのまま見せる。
