@@ -425,6 +425,27 @@ textarea:focus {
   font-style: normal;
 }
 
+/* JSON構文ハイライト。括弧やコロンなどの記号は既定のインク色のまま残す。 */
+.json-view .j-key {
+  color: var(--seg-payload);
+}
+
+.json-view .j-string {
+  color: var(--seg-signature);
+}
+
+.json-view .j-number {
+  color: var(--accent-line);
+}
+
+.json-view .j-boolean {
+  color: var(--seg-header);
+}
+
+.json-view .j-null {
+  color: var(--ink-faint);
+}
+
 /* ── クレーム表(箱にせず罫線で) ── */
 
 .claims-table {
