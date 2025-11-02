@@ -45,6 +45,15 @@ export function algorithmInfo(alg: string): AlgorithmInfo | null {
   }
 }
 
+// algの対応状況。none は署名のない非セキュアトークン(検証する署名が無い)、
+// unsupported は当ツールが扱わない署名方式。supported は検証できる。
+export type AlgStatus = 'none' | 'supported' | 'unsupported';
+
+export function algorithmStatus(alg: string | undefined): AlgStatus {
+  if (typeof alg === 'string' && alg.toLowerCase() === 'none') return 'none';
+  return alg && algorithmInfo(alg) ? 'supported' : 'unsupported';
+}
+
 export interface AlgorithmDescription {
   alg: string;
   // 署名方式の通称

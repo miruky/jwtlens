@@ -524,6 +524,18 @@ textarea:focus {
   color: var(--ink-soft);
 }
 
+/* alg=none の危険を、左の太罫線とdanger色で他のalgと区別して示す。 */
+.alg-card.is-danger {
+  padding-left: 14px;
+  border-left: 3px solid var(--danger);
+  border-bottom-color: color-mix(in srgb, var(--danger) 30%, var(--rule));
+}
+
+.alg-card.is-danger .alg-name,
+.alg-card.is-danger .alg-family {
+  color: var(--danger);
+}
+
 .hint {
   font-size: 13px;
   color: var(--ink-soft);
@@ -724,6 +736,28 @@ textarea:focus {
 }
 .shell > *:nth-child(5) {
   animation-delay: 0.2s;
+}
+
+/* 鍵の案内カードが現れるとき、上の段落から静かにせり上がる。 */
+.alg-card:not([hidden]) {
+  animation: rise 0.4s var(--ease) both;
+}
+
+/* 検証の山場。可否が確定した瞬間に、結果をひと呼吸おいて浮かび上がらせる。 */
+@keyframes result-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.verify-result.verify-ok,
+.verify-result.verify-ng {
+  animation: result-pop 0.34s var(--ease);
 }
 
 /* ── レスポンシブ ── */

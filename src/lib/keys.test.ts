@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { algorithmInfo, describeAlgorithm, KeyError, parseKeyInput } from './keys';
+import {
+  algorithmInfo,
+  algorithmStatus,
+  describeAlgorithm,
+  KeyError,
+  parseKeyInput,
+} from './keys';
 
 describe('algorithmInfo', () => {
   it('HS256はHMAC+SHA-256', () => {
@@ -43,6 +49,26 @@ describe('describeAlgorithm', () => {
   it('未対応アルゴリズムはnull', () => {
     expect(describeAlgorithm('none')).toBeNull();
     expect(describeAlgorithm('EdDSA')).toBeNull();
+  });
+});
+
+describe('algorithmStatus', () => {
+  it('noneは大小によらず none と判定する', () => {
+    expect(algorithmStatus('none')).toBe('none');
+    expect(algorithmStatus('None')).toBe('none');
+    expect(algorithmStatus('NONE')).toBe('none');
+  });
+
+  it('対応する署名方式は supported', () => {
+    expect(algorithmStatus('HS256')).toBe('supported');
+    expect(algorithmStatus('RS512')).toBe('supported');
+    expect(algorithmStatus('ES256')).toBe('supported');
+  });
+
+  it('未対応・未指定は unsupported', () => {
+    expect(algorithmStatus('EdDSA')).toBe('unsupported');
+    expect(algorithmStatus('HS128')).toBe('unsupported');
+    expect(algorithmStatus(undefined)).toBe('unsupported');
   });
 });
 
