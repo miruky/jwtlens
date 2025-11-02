@@ -524,6 +524,18 @@ textarea:focus {
   color: var(--ink-soft);
 }
 
+/* alg=none の危険を、左の太罫線とdanger色で他のalgと区別して示す。 */
+.alg-card.is-danger {
+  padding-left: 14px;
+  border-left: 3px solid var(--danger);
+  border-bottom-color: color-mix(in srgb, var(--danger) 30%, var(--rule));
+}
+
+.alg-card.is-danger .alg-name,
+.alg-card.is-danger .alg-family {
+  color: var(--danger);
+}
+
 .hint {
   font-size: 13px;
   color: var(--ink-soft);
