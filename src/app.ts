@@ -108,7 +108,7 @@ export class App {
             autocapitalize="off" autocomplete="off"
             placeholder="HS系: 共有シークレット / RS・PS・ES系: 公開鍵(PEMまたはJWK)"></textarea>
           <button type="button" class="primary-btn" data-id="verify" disabled>署名を検証</button>
-          <div class="verify-result" data-id="verify-result" hidden></div>
+          <div class="verify-result" data-id="verify-result" role="status" aria-live="polite" hidden></div>
         </section>
       </main>
       <footer class="site-footer">
