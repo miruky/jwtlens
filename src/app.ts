@@ -1,10 +1,19 @@
 import { COPY_ICON, CHECK_ICON, EMPTY_ICON, LENS_MARK, STATE_ICONS, THEME_ICONS } from './icons';
+import { type Severity, securityChecks } from './lib/checks';
 import { claimViews, formatEpoch, tokenTimeStatus, type TokenState } from './lib/claims';
 import { tokenizeJson } from './lib/highlight';
 import { JwtError, parseJwt, type DecodedJwt } from './lib/jwt';
 import { algorithmStatus, describeAlgorithm } from './lib/keys';
 import { lifetime } from './lib/lifetime';
 import { signHs256, verifyJwt } from './lib/verify';
+
+// 観察の重大度ごとのアイコン。danger と warn は三角、info は丸のi、ok は円のチェック。
+const CHECK_ICONS: Record<Severity, string> = {
+  danger: STATE_ICONS.warn,
+  warn: STATE_ICONS.warn,
+  info: STATE_ICONS.info,
+  ok: STATE_ICONS.ok,
+};
 import { applyTheme, loadTheme, nextTheme, THEME_LABEL, type ThemeMode } from './theme';
 
 const SAMPLE_SECRET = 'jwtlens-demo-secret';
@@ -103,6 +112,11 @@ export class App {
         <section class="block block-claims" data-id="claims-block" hidden aria-labelledby="k-claims">
           <div class="block-head"><span class="kicker" id="k-claims">Claims</span></div>
           <div data-id="claims"></div>
+        </section>
+
+        <section class="block block-checks" data-id="checks-block" hidden aria-labelledby="k-checks">
+          <div class="block-head"><span class="kicker" id="k-checks">Checks</span></div>
+          <ul class="checks" data-id="checks"></ul>
         </section>
 
         <section class="block block-empty" data-id="empty">
@@ -210,6 +224,7 @@ export class App {
       this.el['lifetime']!.hidden = true;
       this.el['body']!.hidden = true;
       this.el['claims-block']!.hidden = true;
+      this.el['checks-block']!.hidden = true;
       this.el['empty']!.hidden = true;
       this.el['alg']!.hidden = true;
       verifyButton.disabled = true;
@@ -240,6 +255,7 @@ export class App {
     this.el['lifetime']!.hidden = true;
     this.el['body']!.hidden = true;
     this.el['claims-block']!.hidden = true;
+    this.el['checks-block']!.hidden = true;
     this.el['alg']!.hidden = true;
     this.el['empty']!.hidden = false;
     (this.el['verify'] as HTMLButtonElement).disabled = true;
@@ -293,6 +309,37 @@ export class App {
     this.el['verdict-detail']!.textContent = time.detail;
     this.renderLifetime(nowS);
     this.renderClaims(nowS);
+    this.renderChecks(nowS);
+  }
+
+  // 安全性に関わる観察(失効・時刻の異常・署名方式)を重大度つきで一覧する。
+  private renderChecks(nowS: number): void {
+    if (!this.decoded) {
+      this.el['checks-block']!.hidden = true;
+      return;
+    }
+    const checks = securityChecks(this.decoded.header, this.decoded.payload, nowS);
+    const host = this.el['checks']!;
+    host.innerHTML = '';
+    for (const check of checks) {
+      const item = document.createElement('li');
+      item.className = `check check-${check.severity}`;
+      const icon = document.createElement('span');
+      icon.className = 'check-icon';
+      icon.innerHTML = CHECK_ICONS[check.severity];
+      const text = document.createElement('span');
+      text.className = 'check-text';
+      const title = document.createElement('span');
+      title.className = 'check-title';
+      title.textContent = check.title;
+      const detail = document.createElement('span');
+      detail.className = 'check-detail';
+      detail.textContent = check.detail;
+      text.append(title, detail);
+      item.append(icon, text);
+      host.appendChild(item);
+    }
+    this.el['checks-block']!.hidden = false;
   }
 
   // 有効期間を1本の帯で描く。iat/nbf〜exp の区間に対する現在位置を毎秒更新する。
