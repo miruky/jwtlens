@@ -1,8 +1,9 @@
 import { COPY_ICON, CHECK_ICON, EMPTY_ICON, LENS_MARK, STATE_ICONS, THEME_ICONS } from './icons';
-import { claimViews, tokenTimeStatus, type TokenState } from './lib/claims';
+import { claimViews, formatEpoch, tokenTimeStatus, type TokenState } from './lib/claims';
 import { tokenizeJson } from './lib/highlight';
 import { JwtError, parseJwt, type DecodedJwt } from './lib/jwt';
 import { algorithmStatus, describeAlgorithm } from './lib/keys';
+import { lifetime } from './lib/lifetime';
 import { signHs256, verifyJwt } from './lib/verify';
 import { applyTheme, loadTheme, nextTheme, THEME_LABEL, type ThemeMode } from './theme';
 
@@ -66,6 +67,18 @@ export class App {
             <span class="verdict-head" data-id="verdict-head" aria-live="polite"></span>
             <span class="verdict-detail" data-id="verdict-detail"></span>
           </span>
+        </div>
+
+        <div class="lifetime" data-id="lifetime" hidden>
+          <div class="life-track" role="img" data-id="life-track">
+            <span class="life-fill" data-id="life-fill"></span>
+            <span class="life-now" data-id="life-now"></span>
+          </div>
+          <div class="life-legend">
+            <span class="life-start" data-id="life-start"></span>
+            <span class="life-remain" data-id="life-remain"></span>
+            <span class="life-end" data-id="life-end"></span>
+          </div>
         </div>
 
         <section class="block block-body" data-id="body" hidden aria-labelledby="k-header">
@@ -194,6 +207,7 @@ export class App {
       error.hidden = false;
       this.el['colored']!.hidden = true;
       this.el['verdict']!.hidden = true;
+      this.el['lifetime']!.hidden = true;
       this.el['body']!.hidden = true;
       this.el['claims-block']!.hidden = true;
       this.el['empty']!.hidden = true;
@@ -223,6 +237,7 @@ export class App {
     this.el['parse-error']!.hidden = true;
     this.el['colored']!.hidden = true;
     this.el['verdict']!.hidden = true;
+    this.el['lifetime']!.hidden = true;
     this.el['body']!.hidden = true;
     this.el['claims-block']!.hidden = true;
     this.el['alg']!.hidden = true;
@@ -276,7 +291,36 @@ export class App {
       this.lastState = time.state;
     }
     this.el['verdict-detail']!.textContent = time.detail;
+    this.renderLifetime(nowS);
     this.renderClaims(nowS);
+  }
+
+  // 有効期間を1本の帯で描く。iat/nbf〜exp の区間に対する現在位置を毎秒更新する。
+  private renderLifetime(nowS: number): void {
+    const box = this.el['lifetime']!;
+    const life = this.decoded ? lifetime(this.decoded.payload, nowS) : null;
+    if (!life) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    box.classList.toggle('is-expired', life.expired);
+    box.classList.toggle('is-notyet', life.notYet);
+    const pct = `${(life.ratio * 100).toFixed(2)}%`;
+    (this.el['life-fill'] as HTMLElement).style.width = pct;
+    (this.el['life-now'] as HTMLElement).style.left = pct;
+    const startLabel = life.startKey === 'nbf' ? '有効開始' : '発行';
+    this.el['life-start']!.textContent = `${startLabel} ${formatEpoch(life.startS)}`;
+    this.el['life-end']!.textContent = `失効 ${formatEpoch(life.endS)}`;
+    this.el['life-remain']!.textContent = life.expired
+      ? '失効済み'
+      : life.notYet
+        ? '開始前'
+        : `経過 ${Math.round(life.ratio * 100)}%`;
+    this.el['life-track']!.setAttribute(
+      'aria-label',
+      `有効期間の経過 ${Math.round(life.ratio * 100)} パーセント`,
+    );
   }
 
   private renderClaims(nowS: number): void {
