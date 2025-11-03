@@ -560,6 +560,63 @@ textarea:focus {
   color: var(--danger);
 }
 
+/* ── 安全性の観察 ── */
+
+.checks {
+  list-style: none;
+}
+
+.check {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  padding: 13px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.check:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.check-icon {
+  flex: none;
+  display: inline-flex;
+  margin-top: 1px;
+  color: var(--ink-faint);
+}
+
+.check-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.check-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.check-detail {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.check-danger .check-icon,
+.check-danger .check-title {
+  color: var(--danger);
+}
+
+.check-warn .check-icon {
+  color: var(--accent);
+}
+
+.check-ok .check-icon {
+  color: var(--ok);
+}
+
 /* ── アルゴリズム解説 ── */
 
 .alg-card {
